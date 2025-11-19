@@ -1,18 +1,12 @@
 //! This crate contains all shared fullstack server functions.
 use dioxus::prelude::*;
 
-/// Echo the user input on the server.
-#[post("/api/echo")]
-pub async fn echo(input: String) -> Result<String, ServerFnError> {
-    Ok(input)
-}
-
 
 #[cfg(feature = "server")]
 thread_local! {
     static DB: std::sync::LazyLock<rusqlite::Connection> = std::sync::LazyLock::new(|| {
-        let conn = rusqlite::Connection::open("hotdog.db").expect("Failed to open database");
-
+        let conn = rusqlite::Connection::open("geopib.db").expect("Failed to open database");
+        /* 
         conn.execute_batch(
             "CREATE TABLE IF NOT EXISTS dogs (
                 id INTEGER PRIMARY KEY,
@@ -20,11 +14,25 @@ thread_local! {
             );",
         )
         .unwrap();
-
+        */
         conn
     });
 }
 
+
+#[get("/api/precip")]
+pub async fn list_precip() -> Result<Vec<f64>>{
+    DB.with( |db| {
+        Ok(db
+            .prepare("SELECT * FROM co2")?
+            .query_map([], |row| Ok( row.get(1)? ))?
+            .collect::<Result<Vec<f64>, rusqlite::Error>>()?)
+               
+    })
+}
+
+
+/*
 #[get("/api/dogs")]
 pub async fn list_dogs() -> Result<Vec<(usize, String)>> {
     DB.with(|db| {
@@ -46,3 +54,4 @@ pub async fn save_dog(image: String) -> Result<()> {
     DB.with(|db| db.execute("INSERT INTO dogs (url) VALUES (?1)", [&image]))?;
     Ok(())
 }
+*/

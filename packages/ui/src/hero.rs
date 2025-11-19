@@ -1,21 +1,44 @@
-use api::save_dog;
 use dioxus::prelude::*;
+use charming::{
+    component::{Axis, Grid, Legend, Title},
+    element::{AxisPointer, AxisPointerType, AxisType, Tooltip, Trigger},
+    series::Bar,
+    series::Line,
+    Chart,WasmRenderer
+};
+
 
 const HERO_CSS: Asset = asset!("/assets/styling/hero.css");
 //const HEADER_SVG: Asset = asset!("/assets/header.svg");
 
 #[component]
 pub fn Hero() -> Element {
+    
+    let renderer_ts: Signal<WasmRenderer> = use_signal(|| WasmRenderer::new(1500, 700));
 
-    let mut img_src = use_loader(|| async move {
-        dioxus::Ok(
-            reqwest::get("https://dog.ceo/api/breeds/image/random")
-                .await?
-                .json::<serde_json::Value>()
-                .await?["message"]
-                .to_string(),
+    let mut data_ts = use_loader(api::list_precip)?;
+    let total_data : Vec<String> =(1..data_ts.len()).map(|x| x.to_string()).collect();
+
+
+    use_effect(move || {
+
+
+        let chart_ts = Chart::new()
+        .title(Title::new().text("Income of Germany and France since 1950"))
+        .tooltip(Tooltip::new().trigger(Trigger::Axis))
+        .x_axis(
+            Axis::new()
+                .type_(AxisType::Category)
+                .data(total_data.clone()),
         )
-    })?;
+        .y_axis(Axis::new().type_(AxisType::Value))
+        .series(
+            Line::new()
+                .smooth(true)
+                .data(data_ts.cloned() ),
+        );
+        renderer_ts.read_unchecked().render("chart_ts", &chart_ts).unwrap();
+    }); 
 
     rsx! {
         document::Link { rel: "stylesheet", href: HERO_CSS }
@@ -24,24 +47,15 @@ pub fn Hero() -> Element {
             h1 { "Esta es la página de inicio de la página" }
         }     
 
-        div { id : "dogview", 
-            img { id : "dogimg", src : "{img_src}"}
-        } 
-
-        div { id : "buttons",
-
-            button {  
-                id : "skip", 
-                onclick : move |_| img_src.restart(),
-                "skip"
-            }
-            button { 
-                id : "save",
-                onclick : move |_| async move { _ = save_dog(img_src()).await}, 
-                "save!!"
-             }
-
+        div { style: "width: 100%; text-align: center;",
+            div { id: "chart_ts", style: "display: inline-block;" }
         }
-
+        /* 
+        ul {  
+            for item in data.cloned(){
+                li { "{item}" }
+            }
+        }
+        */
     }
 }

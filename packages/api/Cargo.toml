@@ -4,8 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+chrono = "0.4.42"
 dioxus = { workspace = true, features = ["fullstack"] }
-rusqlite = { version = "0.32.0", optional = true }
+rusqlite = { version = "0.32.0", optional = true, features = ["chrono"] }
 
 [features]
 server = ["dioxus/server", "dep:rusqlite"]
